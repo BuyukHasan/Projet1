@@ -603,7 +603,7 @@ def verification_plateau(plan_plateau):
         for case in cases_isolees:
             anti_isolation(plan_plateau, case)
     else:
-        print("Aucune case isolée détectée")
+        print("Aucune case isolée détectée") 
     
     return detecter, plan_plateau
 
