@@ -576,6 +576,11 @@ def menu_principal():
         texte(600, 445, "ACTIVÉ" if mode_daltonien_actif else "DÉSACTIVÉ", 
               couleur=couleur_etat, ancrage='center', tag='acces_etat')
         rectangle(480, 420, 720, 460, couleur='grey', epaisseur=1)
+
+        #Champ pseudo
+        nom = "fbfrfeibuifgiubsnibiun"
+        rectangle(470, 470,730,510,remplissage = "white", couleur = "black")
+        texte(600,490,nom,ancrage = "center",taille = 18)
         
         mise_a_jour()
         evenement = attend_ev()
@@ -615,6 +620,10 @@ def menu_principal():
             # Daltonien
             if 480 < x_clic < 720 and 420 < y_clic < 460:
                 mode_daltonien_actif = not mode_daltonien_actif
+
+            #Pseudo
+            
+            
 
 # --- PROGRAMME PRINCIPAL ---
 pseudo = input("Quel est votre nom ?")
