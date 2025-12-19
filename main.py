@@ -4,6 +4,7 @@ import math
 import os
 import random
 from classement import *
+
 # --- CONSTANTES DE CONFIGURATION ---
 TAILLE_PIXEL_CASE = 50
 MARGE_PIXEL_X = 100
@@ -12,19 +13,23 @@ NOMBRE_LIGNES = 10
 NOMBRE_COLONNES = 8
 POSITION_X_RATELIER = 550 # Position X des cases supplémentaires
 POSITION_Y_RATELIER_DEPART = 100 # Position Y de départ du râtelier
+
 # --- Mapping Couleur -> Forme pour le mode Daltonien ---
 MAP_COULEUR_FORME = {
     'red': 'cercle',
     'blue': 'carre',
     'green': 'triangle',
-    'yellow': 'etoile'
+    'yellow': 'etoile',
+    'purple': 'losange'  # Ajout pour le mode Difficile
 }
+
 # --- FONCTIONS UTILITAIRES ---
 def indices_vers_pixels(indice_ligne, indice_colonne):
     """Convertit indices grille -> coordonnées pixels (coin haut-gauche)"""
     coordonnee_x = MARGE_PIXEL_X + indice_colonne * TAILLE_PIXEL_CASE
     coordonnee_y = MARGE_PIXEL_Y + indice_ligne * TAILLE_PIXEL_CASE
     return coordonnee_x, coordonnee_y
+
 def pixels_vers_indices(coordonnee_x_clic, coordonnee_y_clic):
     """Convertit clic souris -> indices grille. Retourne None si hors plateau."""
     limite_x_min = MARGE_PIXEL_X
@@ -37,6 +42,7 @@ def pixels_vers_indices(coordonnee_x_clic, coordonnee_y_clic):
     indice_colonne = (coordonnee_x_clic - MARGE_PIXEL_X) // TAILLE_PIXEL_CASE
     indice_ligne = (coordonnee_y_clic - MARGE_PIXEL_Y) // TAILLE_PIXEL_CASE
     return indice_ligne, indice_colonne
+
 # --- NOUVELLE FONCTION POUR GÉRER L'AFFICHAGE DU FOND PERSONNALISÉ ---
 def dessiner_fond_personnalise(mode_jeu, largeur_fenetre=1200, hauteur_fenetre=750):
     """
@@ -64,6 +70,7 @@ def dessiner_fond_personnalise(mode_jeu, largeur_fenetre=1200, hauteur_fenetre=7
     except Exception as e:
         print("Erreur lors du chargement de l'image " + str(fichier_choisi) + ":" + str(e) + ". Utilisation d'un fond gris.")
         rectangle(0, 0, largeur_fenetre, hauteur_fenetre, remplissage='grey', couleur='grey')
+
 # --- DESSIN ET GRAPHIQUE ---
 def dessiner_jeton_centre(x_centre, y_centre, type_jeton, couleur_jeton, mode_daltonien=False):
     """Dessine un jeton à partir de son centre, avec une forme si mode_daltonien est True."""
@@ -110,6 +117,12 @@ def dessiner_jeton_centre(x_centre, y_centre, type_jeton, couleur_jeton, mode_da
                 y = y_centre + int(r * math.sin(angle_rad))
                 points.append((x, y))
             polygone(points, couleur=couleur_forme, remplissage=couleur_forme)
+        elif forme == 'losange': # Ajout Losange pour le mode Difficile
+            t = taille_forme * 0.9
+            polygone([(x_centre, y_centre - t), (x_centre + t, y_centre), 
+                      (x_centre, y_centre + t), (x_centre - t, y_centre)], 
+                     couleur=couleur_forme, remplissage=couleur_forme)
+
 def dessiner_case(indice_ligne, indice_colonne, type_case, couleur_jeton='white', mode_daltonien=False):
     """Dessine une case du plateau principal (mise à jour pour le mode daltonien)"""
     x_coin, y_coin = indices_vers_pixels(indice_ligne, indice_colonne)
@@ -122,6 +135,7 @@ def dessiner_case(indice_ligne, indice_colonne, type_case, couleur_jeton='white'
     rectangle(x_coin, y_coin, x_coin + TAILLE_PIXEL_CASE, y_coin + TAILLE_PIXEL_CASE, remplissage=couleur_remplissage, couleur='black')
     if type_case in [1, 2]:
         dessiner_jeton_centre(x_coin + 25, y_coin + 25, type_case, couleur_jeton, mode_daltonien)
+
 def dessiner_ratelier(etat_cases_suppl, mode_daltonien=False):
     """Redessine toute la zone des cases supplémentaires (mise à jour pour le mode daltonien)"""
     rectangle(POSITION_X_RATELIER - 10, POSITION_Y_RATELIER_DEPART - 10, POSITION_X_RATELIER + 60, POSITION_Y_RATELIER_DEPART + 260, remplissage='white', couleur='white')
@@ -132,6 +146,7 @@ def dessiner_ratelier(etat_cases_suppl, mode_daltonien=False):
         if couleur_jeton is not None:
             dessiner_jeton_centre(POSITION_X_RATELIER + 25, y_actuel + 25, 1, couleur_jeton, mode_daltonien) 
         y_actuel += 50
+
 def rafraichir_plateau_entier(plan_jeu, dictionnaire_couleurs, mode_daltonien=False):
     """Redessine tout le plateau (mise à jour pour le mode daltonien)"""
     rectangle(MARGE_PIXEL_X-5, MARGE_PIXEL_Y-5, MARGE_PIXEL_X + NOMBRE_COLONNES*TAILLE_PIXEL_CASE + 5, 
@@ -140,6 +155,7 @@ def rafraichir_plateau_entier(plan_jeu, dictionnaire_couleurs, mode_daltonien=Fa
         for indice_colonne in range(len(plan_jeu[0])):
             couleur = dictionnaire_couleurs.get((indice_ligne, indice_colonne), 'white')
             dessiner_case(indice_ligne, indice_colonne, plan_jeu[indice_ligne][indice_colonne], couleur, mode_daltonien)
+
 # --- LOGIQUE DU JEU ---
 def generer_plan_plateau():
     plan_plateau = []
@@ -154,6 +170,7 @@ def generer_plan_plateau():
                 ligne_nouvelle.append(2)
         plan_plateau.append(ligne_nouvelle)
     return plan_plateau
+
 def calculer_total_jeton(plan_jeu) :
     compteur = 0
     for ligne in plan_jeu :
@@ -161,6 +178,7 @@ def calculer_total_jeton(plan_jeu) :
             if case in [1 , 2] :
                 compteur += 1
     return compteur
+
 def trouver_point_depart(plan_jeu):
     ligne_depart = 0
     if len(plan_jeu) == 0 or len(plan_jeu[0]) == 0:
@@ -170,6 +188,7 @@ def trouver_point_depart(plan_jeu):
         if plan_jeu[ligne_depart][c] in [1, 2]: 
             return ligne_depart, c
     return None, None
+
 def parcours_profondeur(plan_jeu, ligne, colonne, visitees , nb_lignes , nb_colonnes) :
     if ligne < 0 or ligne >= nb_lignes or colonne < 0 or colonne >= nb_colonnes :
         return
@@ -184,6 +203,7 @@ def parcours_profondeur(plan_jeu, ligne, colonne, visitees , nb_lignes , nb_colo
         nouveau_colonne = colonne + mouvement[1]
         parcours_profondeur(plan_jeu , nouveau_ligne , nouveau_colonne , visitees , nb_lignes , nb_colonnes)
     return 
+
 def corriger_isolations(plan_jeu):
     while True:
         nb_lignes = len(plan_jeu)
@@ -228,13 +248,15 @@ def corriger_isolations(plan_jeu):
                         break 
             if mur_cassé:
                 break     
+
 def nombres_couleurs(plan_jeu, dictionnaire_couleurs) :
     """Calcule le nombre d'occurrences de chaque couleur de jeton."""
-    compteur_couleurs = {'red': 0, 'blue': 0, 'green': 0, 'yellow': 0}
+    compteur_couleurs = {'red': 0, 'blue': 0, 'green': 0, 'yellow': 0, 'purple': 0}
     for (ligne, colonne), couleur in dictionnaire_couleurs.items():
         if plan_jeu[ligne][colonne] in [1, 2]:
             compteur_couleurs[couleur] += 1
     return compteur_couleurs
+
 def corriger_multiple_3(plan_jeu, dictionnaire_couleurs) :
     """
     Vérifie si le compte de chaque couleur est un multiple de 3.
@@ -268,24 +290,35 @@ def corriger_multiple_3(plan_jeu, dictionnaire_couleurs) :
                     plan_jeu[ligne][colonne] = 2 # Type 2 pour le reste
                 dictionnaire_couleurs[(ligne, colonne)] = couleur
     return plan_jeu, dictionnaire_couleurs
-def initialiser_partie():
+
+def initialiser_partie(difficulte="Moyen"): # Paramètre ajouté
     plan_jeu = generer_plan_plateau()
     plan_jeu = corriger_isolations(plan_jeu)
-    couleurs_possibles = ['red', 'blue', 'green', 'yellow']
+    
+    # Gestion des couleurs selon la difficulté
+    if difficulte == "Facile":
+        couleurs_possibles = ['red', 'blue', 'green']
+    elif difficulte == "Difficile":
+        couleurs_possibles = ['red', 'blue', 'green', 'yellow', 'purple']
+    else: # Moyen par défaut
+        couleurs_possibles = ['red', 'blue', 'green', 'yellow']
+        
     dictionnaire_couleurs = {}
     for indice_ligne in range(len(plan_jeu)):
         for indice_colonne in range(len(plan_jeu[0])):
             if plan_jeu[indice_ligne][indice_colonne] in [1, 2]:
-                dictionnaire_couleurs[(indice_ligne, indice_colonne)] = couleurs_possibles[randint(0, 3)]
+                dictionnaire_couleurs[(indice_ligne, indice_colonne)] = random.choice(couleurs_possibles)
     plan_jeu, dictionnaire_couleurs = corriger_multiple_3(plan_jeu, dictionnaire_couleurs)    
     etat_ratelier = [None] * 5
     return plan_jeu, dictionnaire_couleurs, etat_ratelier
+
 def verifier_victoire(plan_jeu):
     for ligne in plan_jeu:
         for case in ligne:
             if case in [1, 2]:
                 return False
     return True
+
 def liberation_voisins(plan_jeu, dictionnaire_couleurs, ligne_clic, colonne_clic, mode_daltonien=False):
     """Transforme les petits jetons (2) en gros (1) autour de la case cliquée (mise à jour pour le mode daltonien)"""
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -296,6 +329,7 @@ def liberation_voisins(plan_jeu, dictionnaire_couleurs, ligne_clic, colonne_clic
                 plan_jeu[nouvelle_ligne][nouvelle_colonne] = 1
                 couleur = dictionnaire_couleurs.get((nouvelle_ligne, nouvelle_colonne), 'red')
                 dessiner_case(nouvelle_ligne, nouvelle_colonne, 1, couleur, mode_daltonien) 
+
 def gerer_ratelier(etat_ratelier, couleur_ajout, mode_daltonien=False):
     """
     Ajoute un jeton au râtelier et gère les suppressions par triplette.
@@ -356,7 +390,7 @@ def gerer_ratelier(etat_ratelier, couleur_ajout, mode_daltonien=False):
         return True, True, 0
     return True, False, 0
 
-# --- ÉCRANS ET ANIMATIONS (MISES À JOUR POUR GÉRER 'CUSTOM') ---
+# --- ÉCRANS ET ANIMATIONS ---
 
 def ecran_fin(message, sous_message, theme_couleur):
     efface_tout()
@@ -371,10 +405,10 @@ def ecran_fin(message, sous_message, theme_couleur):
     mise_a_jour()
     attend_clic_gauche()
 
-# --- MODES DE JEU (MISES À JOUR POUR GÉRER 'CUSTOM') ---
+# --- MODES DE JEU ---
 
-def mode_solo(theme_couleur, mode_daltonien_actif):
-    plan_jeu, dictionnaire_couleurs, etat_ratelier = initialiser_partie()
+def mode_solo(theme_couleur, mode_daltonien_actif, difficulte): # Paramètre difficulte
+    plan_jeu, dictionnaire_couleurs, etat_ratelier = initialiser_partie(difficulte)
     if theme_couleur == 'CUSTOM':
         dessiner_fond_personnalise('SOLO')
     else:
@@ -406,7 +440,8 @@ def mode_solo(theme_couleur, mode_daltonien_actif):
                 liberation_voisins(plan_jeu, dictionnaire_couleurs, ligne_clic, colonne_clic, mode_daltonien_actif)
                 succes_ajout, perdu, points_gagners = gerer_ratelier(etat_ratelier, couleur_jeton_capture, mode_daltonien_actif)
                 if points_gagners > 0:
-                    score_joueur += points_gagners
+                    point_bonus  = 1 if etat_ratelier.count(None) == 3 else 0
+                    score_joueur += 1 + point_bonus
                     efface("score")
                     texte(850, 500, "Score: " + str(score_joueur), taille=20, tag="score")
                 if perdu:
@@ -418,8 +453,8 @@ def mode_solo(theme_couleur, mode_daltonien_actif):
                     return score_joueur
         mise_a_jour()
 
-def mode_VS(theme_couleur, mode_daltonien_actif):
-    plan_jeu, dictionnaire_couleurs, etat_ratelier = initialiser_partie()
+def mode_VS(theme_couleur, mode_daltonien_actif, difficulte): # Paramètre difficulte
+    plan_jeu, dictionnaire_couleurs, etat_ratelier = initialiser_partie(difficulte)
     if theme_couleur == 'CUSTOM':
         dessiner_fond_personnalise('VS')
     else:
@@ -465,8 +500,9 @@ def mode_VS(theme_couleur, mode_daltonien_actif):
                 liberation_voisins(plan_jeu, dictionnaire_couleurs, ligne_clic, colonne_clic, mode_daltonien_actif)
                 succes_ajout, perdu, points_gagners = gerer_ratelier(etat_ratelier, couleur_jeton_capture, mode_daltonien_actif)
                 if points_gagners > 0:
-                    scores_joueurs[joueur_actuel] += 2 
-                    print("Joueur " + str(joueur_actuel) + " fait une triplette !")
+                        point_bonus  = 1 if etat_ratelier.count(None) == 3 else 0
+                        scores_joueurs[joueur_actuel] += 1 + point_bonus
+                        print("Joueur " + str(joueur_actuel) + " fait une triplette !")
                 else:
                     joueur_actuel = 3 - joueur_actuel
                 mettre_a_jour_affichage_scores()
@@ -494,6 +530,11 @@ def menu_principal():
     index_couleur_theme = 0
     mode_jeu_selectionne = 'SOLO'
     mode_daltonien_actif = False
+    
+    # Paramètres Difficulté
+    difficultes = ["Facile", "Moyen", "Difficile"]
+    index_difficulte = 1 # Moyen par défaut
+    
     en_menu = True
     while en_menu:
         efface_tout()
@@ -502,57 +543,89 @@ def menu_principal():
             rectangle(0, 0, 1200, 750, remplissage='grey', couleur='grey')
         else:
             rectangle(0, 0, 1200, 750, remplissage=theme_actuel, couleur=theme_actuel)
+        
         rectangle(500, 100, 700, 200, couleur='black', remplissage='white')
         texte(600, 150, 'PickTok', taille=28, ancrage='center')
-        rectangle(500, 480, 700, 540, couleur='black', remplissage='#10E311')
-        texte(600, 510, 'JOUER', taille=22, ancrage='center')
-        texte(600, 250, "Couleur: " + str(noms_themes[index_couleur_theme]), ancrage='center')
-        texte(450, 250, "<", taille=20, couleur='blue')
-        texte(750, 250, ">", taille=20, couleur='blue')
+        
+        rectangle(500, 520, 700, 580, couleur='black', remplissage='#10E311')
+        texte(600, 550, 'JOUER', taille=22, ancrage='center')
+        
+        # Sélecteur Thème
+        texte(600, 230, "Couleur: " + str(noms_themes[index_couleur_theme]), ancrage='center')
+        texte(450, 230, "<", taille=20, couleur='blue')
+        texte(750, 230, ">", taille=20, couleur='blue')
+        
+        # Sélecteur Difficulté
+        texte(600, 280, "Difficulté: " + str(difficultes[index_difficulte]), ancrage='center')
+        texte(450, 280, "<", taille=20, couleur='blue')
+        texte(750, 280, ">", taille=20, couleur='blue')
+        
+        # Sélecteur Mode
         if mode_jeu_selectionne == 'SOLO':
             couleur_solo = 'red'
             couleur_vs = 'black'
         elif mode_jeu_selectionne == 'VS':
             couleur_solo = 'black'
             couleur_vs = 'red'
-        texte(550, 320, "SOLO", couleur=couleur_solo, ancrage='center')
-        texte(650, 320, "VS", couleur=couleur_vs, ancrage='center')
-        couleur_acc = 'red' if mode_daltonien_actif else 'black'
-        texte(600, 370, "Mode Accès (Formes) :", ancrage='center')
+        texte(550, 340, "SOLO", couleur=couleur_solo, ancrage='center')
+        texte(650, 340, "VS", couleur=couleur_vs, ancrage='center')
+        
+        # Daltonien
+        texte(600, 400, "Mode Accès (Formes) :", ancrage='center')
         couleur_etat = 'green' if mode_daltonien_actif else 'black'
-        texte(600, 415, "ACTIVÉ" if mode_daltonien_actif else "DÉSACTIVÉ", 
+        texte(600, 445, "ACTIVÉ" if mode_daltonien_actif else "DÉSACTIVÉ", 
               couleur=couleur_etat, ancrage='center', tag='acces_etat')
-        rectangle(480, 390, 720, 430, couleur='grey', epaisseur=1)
+        rectangle(480, 420, 720, 460, couleur='grey', epaisseur=1)
+        
         mise_a_jour()
         evenement = attend_ev()
         type_evenement = type_ev(evenement)
         if type_evenement == 'Quitte':
             ferme_fenetre()
-            return None, None, None  
+            return None, None, None, None # Retourne 4 valeurs maintenant
         elif type_evenement == 'ClicGauche':
             x_clic, y_clic = abscisse(evenement), ordonnee(evenement)
-            if 500 < x_clic < 700 and 480 < y_clic < 540:
+            
+            # Jouer
+            if 500 < x_clic < 700 and 520 < y_clic < 580:
                 efface_tout()
-                return theme_actuel, mode_jeu_selectionne, mode_daltonien_actif
-            if 430 < x_clic < 470 and 230 < y_clic < 270:
-                index_couleur_theme = (index_couleur_theme - 1) % len(couleurs_themes)
-            elif 730 < x_clic < 770 and 230 < y_clic < 270:
-                index_couleur_theme = (index_couleur_theme + 1) % len(couleurs_themes)
-            if 500 < x_clic < 600 and 300 < y_clic < 340:
-                mode_jeu_selectionne = 'SOLO'
-            elif 600 < x_clic < 700 and 300 < y_clic < 340:
-                mode_jeu_selectionne = 'VS'
-            if 480 < x_clic < 720 and 390 < y_clic < 430:
+                return theme_actuel, mode_jeu_selectionne, mode_daltonien_actif, difficultes[index_difficulte]
+            
+            # Thème
+            if 210 < y_clic < 250:
+                if 430 < x_clic < 470:
+                    index_couleur_theme = (index_couleur_theme - 1) % len(couleurs_themes)
+                elif 730 < x_clic < 770:
+                    index_couleur_theme = (index_couleur_theme + 1) % len(couleurs_themes)
+            
+            # Difficulté
+            if 260 < y_clic < 300:
+                if 430 < x_clic < 470:
+                    index_difficulte = (index_difficulte - 1) % len(difficultes)
+                elif 730 < x_clic < 770:
+                    index_difficulte = (index_difficulte + 1) % len(difficultes)
+                    
+            # Mode
+            if 320 < y_clic < 360:
+                if 500 < x_clic < 600:
+                    mode_jeu_selectionne = 'SOLO'
+                elif 600 < x_clic < 700:
+                    mode_jeu_selectionne = 'VS'
+            
+            # Daltonien
+            if 480 < x_clic < 720 and 420 < y_clic < 460:
                 mode_daltonien_actif = not mode_daltonien_actif
+
 # --- PROGRAMME PRINCIPAL ---
 pseudo = input("Quel est votre nom ?")
 while True:
-    theme_choisi, mode_choisi, acces_actif = menu_principal()
-    if theme_choisi is None:
+    res = menu_principal()
+    if res[0] is None:
         break
+    theme_choisi, mode_choisi, acces_actif, diff_choisie = res
     if mode_choisi == 'SOLO':
-        score_joueur = mode_solo(theme_choisi, acces_actif)
+        score_joueur = mode_solo(theme_choisi, acces_actif, diff_choisie)
         if type(score_joueur) == int :
             main_leaderboard(score_joueur , pseudo)
     elif mode_choisi == 'VS':
-        mode_VS(theme_choisi, acces_actif)
+        mode_VS(theme_choisi, acces_actif, diff_choisie)
