@@ -381,6 +381,7 @@ def mode_solo(theme_couleur, mode_daltonien_actif):
     rectangle(10, 10, 90, 40, couleur='black', remplissage='red')
     texte(50, 25, "MENU", ancrage='center', couleur='white')
     score_joueur = 0
+    rectangle(828, 480, 970, 530, remplissage='white', couleur='black')
     texte(850, 500, "Score: 0", taille=20, tag="score")
     jeu_en_cours = True
     while jeu_en_cours:
@@ -432,6 +433,7 @@ def mode_VS(theme_couleur, mode_daltonien_actif):
             couleur_texte_j1 = 'green'
         else:
             couleur_texte_j1 = 'black'
+        rectangle(810, 480, 1100, 620, remplissage='white', couleur='black', tag="info_vs")
         texte(850, 500, "Joueur 1: " + str(scores_joueurs[1]), couleur=couleur_texte_j1, tag="info_vs")
         if joueur_actuel == 2:
             couleur_texte_j2 = 'green'
