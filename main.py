@@ -262,7 +262,10 @@ def corriger_multiple_3(plan_jeu, dictionnaire_couleurs) :
                             murs_adjacents_jeton.append((ligne, colonne))
             for i in range(min(nb_a_ajouter, len(murs_adjacents_jeton))):
                 ligne, colonne = murs_adjacents_jeton.pop(0)
-                plan_jeu[ligne][colonne] = 2
+                if ligne == 0:
+                    plan_jeu[ligne][colonne] = 1 # Type 1 si ligne 0
+                else:
+                    plan_jeu[ligne][colonne] = 2 # Type 2 pour le reste
                 dictionnaire_couleurs[(ligne, colonne)] = couleur
     return plan_jeu, dictionnaire_couleurs
 def initialiser_partie():
