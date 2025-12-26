@@ -536,6 +536,7 @@ def menu_principal():
     index_difficulte = 1 # Moyen par défaut
     
     en_menu = True
+    nom = ""
     while en_menu:
         efface_tout()
         theme_actuel = couleurs_themes[index_couleur_theme]
@@ -578,13 +579,25 @@ def menu_principal():
         rectangle(480, 420, 720, 460, couleur='grey', epaisseur=1)
 
         #Champ pseudo
-        nom = "fbfrfeibuifgiubsnibiun"
         rectangle(470, 470,730,510,remplissage = "white", couleur = "black")
-        texte(600,490,nom,ancrage = "center",taille = 18)
+        texte(600,490,nom,ancrage = "center",taille = 18 , tag = "pseudo")
         
         mise_a_jour()
         evenement = attend_ev()
         type_evenement = type_ev(evenement)
+        if type_evenement == 'Touche':  # on indique la touche pressée
+            efface("pseudo")
+            caractere = touche(evenement)
+            if caractere == "BackSpace" :
+                nom = nom[:len(nom)-1]
+                texte(600,490,nom,ancrage = "center",taille = 18 , tag = "pseudo")
+            elif caractere == "space" :
+                nom = nom + " "
+                texte(600,490,nom,ancrage = "center",taille = 18 , tag = "pseudo")
+            else :
+                nom = nom + caractere
+                texte(600,490,nom,ancrage = "center",taille = 18 , tag = "pseudo")
+            mise_a_jour()
         if type_evenement == 'Quitte':
             ferme_fenetre()
             return None, None, None, None # Retourne 4 valeurs maintenant
@@ -594,7 +607,7 @@ def menu_principal():
             # Jouer
             if 500 < x_clic < 700 and 520 < y_clic < 580:
                 efface_tout()
-                return theme_actuel, mode_jeu_selectionne, mode_daltonien_actif, difficultes[index_difficulte]
+                return theme_actuel, mode_jeu_selectionne, mode_daltonien_actif, difficultes[index_difficulte] ,nom
             
             # Thème
             if 210 < y_clic < 250:
@@ -626,12 +639,11 @@ def menu_principal():
             
 
 # --- PROGRAMME PRINCIPAL ---
-pseudo = input("Quel est votre nom ?")
 while True:
     res = menu_principal()
     if res[0] is None:
         break
-    theme_choisi, mode_choisi, acces_actif, diff_choisie = res
+    theme_choisi, mode_choisi, acces_actif, diff_choisie , pseudo = res
     if mode_choisi == 'SOLO':
         score_joueur = mode_solo(theme_choisi, acces_actif, diff_choisie)
         if type(score_joueur) == int :
